@@ -1,16 +1,14 @@
 import dotenv
 import os
-from openai import OpenAI
+from transformers import pipeline
 
 dotenv.load_dotenv()
 
 class Analyzer:
     def __init__(self):
-        # Initialise le client compatible avec l'API OpenAI, configuré ici pour Groq.
-        self.llm = OpenAI(
-            api_key=os.getenv("GROQ_API_KEY"),
-            base_url="https://api.groq.com/openai/v1",
-        )
+        # Initialise le client compatible avec l'API transformers.
+        self.classifier = pipeline("zero-shot-classification", model="typeform/distilbert-base-uncased-mnli", top_k=None)
+
 
         # Définit le message système qui donne son rôle et son style de réponse au bot.
         #Nous allons utiliser le prompt engineering avec les few-shot prompts
@@ -48,16 +46,10 @@ class Analyzer:
 
     def sentiment_analysis(self, text):
 
-        response = self.llm.chat.completions.create(
-            model='openai/gpt-oss-20b',
-            messages=[
-                *self.messages,
-                {'role': 'user', 'content': text}
-            ],
-            temperature=0.1,
-        )
+        labels = ["negative", "neutral", "positive"]
+        result = self.classifier(text, candidate_labels=labels)
 
-        return response.choices[0].message.content
+        return result
 
 
 
